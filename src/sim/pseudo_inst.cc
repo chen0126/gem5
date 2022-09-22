@@ -200,6 +200,12 @@ m5fail(ThreadContext *tc, Tick delay, uint64_t code)
 {
     DPRINTF(PseudoInst, "pseudo_inst::m5fail(%i, %i)\n", delay, code);
     Tick when = curTick() + delay * sim_clock::as_int::ns;
+    if (code == 0x80) {
+        if (!DTRACE(PseudoInst))
+            printf("Special m5fail debug call encountered, run with PseudoInst debug-flag to see "
+                   "tick\n");
+        return;
+    }
     exitSimLoop("m5_fail instruction encountered", code, when, 0, true);
 }
 

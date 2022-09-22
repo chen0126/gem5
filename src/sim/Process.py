@@ -63,6 +63,9 @@ class Process(SimObject):
     drivers = VectorParam.EmulatedDriver([], 'Available emulated drivers')
     release = Param.String('5.1.0', "Linux kernel uname release")
 
+    reserved_start_addr = Param.Addr("start address of reserved space")
+    reserved_size = Param.Unsigned("size in Bytes of reserved space")
+
     @classmethod
     def export_methods(cls, code):
         code('bool map(Addr vaddr, Addr paddr, int sz, bool cacheable=true);')

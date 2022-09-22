@@ -128,6 +128,8 @@ Process::Process(const ProcessParams &params, EmulationPageTable *pTable,
       _gid(params.gid), _egid(params.egid),
       _pid(params.pid), _ppid(params.ppid),
       _pgid(params.pgid), drivers(params.drivers),
+      reservedStartAddr(params.reserved_start_addr),
+      reservedSize(params.reserved_size),
       fds(std::make_shared<FDArray>(
                   params.input, params.output, params.errout)),
       childClearTID(0),
@@ -304,6 +306,10 @@ Process::initState()
     // load object file into target memory
     image.write(*initVirtMem);
     interpImage.write(*initVirtMem);
+
+    if (reservedSize)
+        map(reservedStartAddr, reservedStartAddr,
+                     reservedSize, false /*cacheable*/);
 }
 
 DrainState

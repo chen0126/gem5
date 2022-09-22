@@ -295,6 +295,16 @@ class Process : public SimObject
      */
     uint64_t childClearTID;
 
+    /**
+     * Start address of reserved space.
+     */
+    Addr reservedStartAddr;
+    
+    /**
+     * Size of reserved space in Bytes (set to 0 to disable allocation).
+     */
+    unsigned reservedSize;
+
     // Process was forked with SIGCHLD set.
     bool *sigchld;
 
