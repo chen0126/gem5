@@ -92,7 +92,8 @@ class WorkQueue : public AbstractMemory
         const PacketPtr pkt;
         WorkQueuePort_e portType;
 
-        DeferredPacket(PacketPtr _pkt, Tick _tick, WorkQueuePort_e _portType) : tick(_tick), pkt(_pkt), portType(_portType)
+        DeferredPacket(PacketPtr _pkt, Tick _tick, WorkQueuePort_e _portType) : 
+		tick(_tick), pkt(_pkt), portType(_portType)
         { }
     };
 
@@ -106,7 +107,8 @@ class WorkQueue : public AbstractMemory
 
       public:
 
-        MemoryPort(const std::string& _name, WorkQueue& _workQueue, WorkQueuePort_e _type);
+        MemoryPort(const std::string& _name, WorkQueue& _workQueue,
+                         WorkQueuePort_e _type);
 
       protected:
 

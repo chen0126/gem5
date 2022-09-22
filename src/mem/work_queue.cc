@@ -40,10 +40,10 @@
  * Authors: Subhankar Pal
  */
 
-#include <string>
-#include <bitset>
-
 #include "mem/work_queue.hh"
+
+#include <bitset>
+#include <string>
 
 #include "base/random.hh"
 #include "base/trace.hh"
@@ -97,22 +97,24 @@ WorkQueue::access(PacketPtr pkt)
     //                  pkt->getAddr() + (pkt->getSize() - 1)).isSubset(range));
 
     panic_if(!writeOK(pkt), "writeOK(pkt) not set");
-    panic_if(pkt->getSize() != 4, "Work item (req payload) size must be 4B, but is: %luB", pkt->getSize());
+    panic_if(pkt->getSize() != 4, "Work item (req payload) size must be 4B, but is: %luB", 
+		    pkt->getSize());
     if (pkt->isRead()) {
         DPRINTF(WorkQueue, "Received pop request in access()\n");
         // Read and delete from the work queue since this is pop_port.
         assert(!pkt->isWrite());
-        panic_if(pkt->isLLSC(), "Should only see load/store requests to work queue");
-
+        panic_if(pkt->isLLSC(),
+                        "Should only see load/store requests to work queue");
         panic_if(workQ.size() == 0, "Work popped when queue was empty");
         uint32_t data = workQ.front();
         workQ.pop();
         memcpy(pkt->getPtr<uint32_t>(), &data, pkt->getSize());
-        if(DTRACE(WorkQueue)) {
-            printf("Packet on pop_port now contains data: 0x%X\n", *(pkt->getPtr<uint32_t>()));
+        if (DTRACE(WorkQueue)) {
+            printf("Packet on pop_port now contains data: 0x%X\n",
+                            *(pkt->getPtr<uint32_t>()));
             printf("Entries: ");
             std::queue<uint32_t> copy = workQ;
-            while(!copy.empty()) {
+            while (!copy.empty()) {
                 printf("0x%x -> ", copy.front());
                 copy.pop();
             }
@@ -126,10 +128,10 @@ WorkQueue::access(PacketPtr pkt)
         // Write into the work queue since this is push_port.
         panic_if(workQ.size() == this->size, "Work pushed when queue was full");
         workQ.push(*(pkt->getConstPtr<uint32_t>()));
-        if(DTRACE(WorkQueue)) {
+        if (DTRACE(WorkQueue)) {
             printf("Entries: ");
             std::queue<uint32_t> copy = workQ;
-            while(!copy.empty()) {
+            while (!copy.empty()) {
                 printf("0x%x -> ", copy.front());
                 copy.pop();
             }
@@ -205,9 +207,8 @@ WorkQueue::recvTimingReq(PacketPtr pkt, WorkQueuePort_e portType)
             isBusy, isEmpty, isFull);
 
     std::bitset<8> workQStatus;
-    if(isEmpty) workQStatus.set(0);
-    if(isFull) workQStatus.set(1);
-
+    if (isEmpty) workQStatus.set(0);
+    if (isFull) workQStatus.set(1);
     // we should not get a new request after committing to retry the
     // current one, but unfortunately the CPU violates this rule, so
     // simply ignore it for now
@@ -223,23 +224,23 @@ WorkQueue::recvTimingReq(PacketPtr pkt, WorkQueuePort_e portType)
         return false;
     }*/
     if (portType == PopPortType) {
-        if(isBusy) {
+        if (isBusy) {
             DPRINTF(WorkQueue, "%s: Work queue is busy; setting retryPop\n", portName);
             retryPop = true;
             return false;
-        } else if(isEmpty) {
+        } else if (isEmpty) {
             DPRINTF(WorkQueue, "%s: Work queue is empty; setting retryPop"
                 "\n", portName);
             retryPop = true;
             return false;
         }
     } else if (portType == PushPortType) {
-        if(isBusy) {
+        if (isBusy) {
             DPRINTF(WorkQueue, "%s: Work queue is busy; setting retryPush"
                 "\n", portName);
             retryPush = true;
             return false;
-        } else if(isFull) {
+        } else if (isFull) {
             DPRINTF(WorkQueue, "%s: Work queue is full; setting retryPush"
                 "\n", portName);
             retryPush = true;
@@ -317,7 +318,7 @@ WorkQueue::release()
 {
     // assert(isBusy || (portType == PopPortType && isEmpty) || (portType == PushPortType && isFull));
     DPRINTF(WorkQueue, "%s: isBusy: %d, retryPop: %d, retryPush: %d\n", __func__, isBusy, retryPop, retryPush);
-    if(isBusy) {
+    if (isBusy) {
         isBusy = false;
     }
     if (retryPop) {
@@ -336,10 +337,10 @@ WorkQueue::dequeue()
     assert(!packetQueue.empty());
     DeferredPacket deferred_pkt = packetQueue.front();
 
-    if(deferred_pkt.portType == PopPortType) {
+    if (deferred_pkt.portType == PopPortType) {
         retryResp = !popPort.sendTimingResp(deferred_pkt.pkt);
         DPRINTF(WorkQueue, "Sending timing response to pop_port: %s\n", retryResp ? "Retry" : "Succeeded");
-    } else if(deferred_pkt.portType == PushPortType) {
+    } else if (deferred_pkt.portType == PushPortType) {
         retryResp = !pushPort.sendTimingResp(deferred_pkt.pkt);
         DPRINTF(WorkQueue, "Sending timing response to push_port: %s\n", retryResp ? "Retry" : "Succeeded");
     }
@@ -425,9 +426,9 @@ WorkQueue::MemoryPort::getAddrRanges() const
     AddrRangeList ranges;
     // ranges.push_back(workQueue.getAddrRange());
 
-    if(this->type == PopPortType) {
+    if (this->type == PopPortType) {
         ranges.push_back(AddrRange(workQueue.getPopPortAddr(), workQueue.getPopPortAddr()+4));
-    } else if(this->type == PushPortType) {
+    } else if (this->type == PushPortType) {
         ranges.push_back(AddrRange(workQueue.getPushPortAddr(), workQueue.getPushPortAddr()+4));
     }
     return ranges;
@@ -458,11 +459,6 @@ WorkQueue::MemoryPort::recvRespRetry()
     workQueue.recvRespRetry();
 }
 
-//WorkQueue*
-//WorkQueueParams::create()
-//{
-//    return new WorkQueue(this);
-//}
 
 void
 WorkQueue::regStats()
