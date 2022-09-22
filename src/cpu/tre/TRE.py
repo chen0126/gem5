@@ -58,9 +58,9 @@ class TRE(ClockedObject):
 
     # Determine how often to print progress messages and what timeout
     # to use for checking progress of both requests and responses
-    progress_interval = Param.Counter(1000000,
+    progress_interval = Param.Counter(10000000,
         "Progress report interval (in accesses)")
-    progress_check = Param.Cycles(1000000000, "Cycles before exiting " \
+    progress_check = Param.Cycles(10000000000000, "Cycles before exiting " \
                                       "due to lack of progress")
 
     port = RequestPort("Port to the memory system")
