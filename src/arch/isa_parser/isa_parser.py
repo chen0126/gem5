@@ -1582,7 +1582,7 @@ StaticInstPtr
     def update(self, file, contents):
         '''Update the output file only.  Scons should handle the case when
         the new contents are unchanged using its built-in hash feature.'''
-        f = self.open(file)
+        f = self.open(file, "r", encoding="utf-8")
         f.write(contents)
         f.close()
 
@@ -1608,7 +1608,7 @@ StaticInstPtr
 
         current_dir = os.path.dirname(filename)
         try:
-            contents = open(filename).read()
+            contents = open(filename, "r", encoding="utf-8").read()
         except IOError:
             error('Error including file "%s"' % filename)
 
