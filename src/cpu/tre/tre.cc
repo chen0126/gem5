@@ -395,16 +395,24 @@ TRE::tick()
                 !word.compare("LDU") ||  // uncacheable load
                 !word.compare("LDB") ||  // blocking load
                 !word.compare("LDUB") ||  // blocking uncacheable load
+                !word.compare("VLD") ||
                 !word.compare("ST") ||   // non-blocking store
                 !word.compare("STU") ||  // non-blocking uncacheable store
                 !word.compare("STB") ||  // blocking store
-                !word.compare("STUB")) { // blocking uncacheable store
-
+                !word.compare("STUB")||
+                !word.compare("VST")) { // blocking uncacheable store
+                
                 cmd = (!word.compare("LD") || !word.compare("LDU") || !word.compare("LDB") ||
                        !word.compare("LDUB"))
                           ? TRECmd::LD
-                          : TRECmd::ST;
-                blkingAccess = !word.compare("LDB") || !word.compare("LDUB") ||
+                          : TRECmd::ST;    
+           	if (!word.compare("VLD")){
+                    cmd = TRECmd::VLD;
+                }
+                else if (!word.compare("VST")){
+                    cmd = TRECmd::VST;
+                }
+		blkingAccess = !word.compare("LDB") || !word.compare("LDUB") ||
                                !word.compare("STB") || !word.compare("STUB");
                 uncacheable = !word.compare("LDU") || !word.compare("LDUB") ||
                               !word.compare("STU") || !word.compare("STUB");
@@ -419,7 +427,7 @@ TRE::tick()
                     word = readNextToken();
                 }
                 paddr = stol(word, nullptr, 16); // base 16
-
+		DPRINTF(TRE, "paddr = 0x%x\n", paddr);
                 if (outstandingAddrs.size() >= maxNumOutstandingAddrs) {
                     blocked = true;
                     DPRINTF(TRE,
@@ -435,6 +443,12 @@ TRE::tick()
                             "Blocking access to 0x%x because blocking load to 0x%x is in flight\n",
                             paddr, depAddr);
                 }
+		if (cmd == TRECmd::VLD || cmd == TRECmd::VST){
+                    word = readNextToken();
+                    paddr_end = stol(word, nullptr, 16); // base 16
+		    DPRINTF(TRE, "paddr_end = 0x%x\n", paddr_end);
+		}
+		
 
                 word = readNextToken();
                 fatal_if(word.compare("("),
@@ -737,6 +751,7 @@ TRE::tick()
 
     PacketPtr pkt = nullptr;
     uint8_t *pkt_data = new uint8_t[1];
+    uint8_t *pkt_data_vector = new uint8_t[8];
 
     if (cmd == TRECmd::LD) {
         DPRINTF(TRE, "Initiating read at addr 0x%x (blk 0x%x)\n", req->getPaddr(),
@@ -744,12 +759,25 @@ TRE::tick()
 
         pkt = new Packet(req, MemCmd::ReadReq);
         pkt->dataDynamic(pkt_data);
+    } else if (cmd == TRECmd::VLD) {
+        DPRINTF(TRE, "Initiating read at addr 0x%x (blk 0x%x)\n", req->getPaddr(),
+                blockAlign(req->getPaddr()));
+
+        pkt = new Packet(req, MemCmd::ReadReq);
+        pkt->dataDynamic(pkt_data_vector);
     } else if (cmd == TRECmd::ST) {
         DPRINTF(TRE, "Initiating %s write at addr 0x%x (blk 0x%x)\n",
                 uncacheable ? "uncacheable " : "", req->getPaddr(), blockAlign(req->getPaddr()));
 
         pkt = new Packet(req, MemCmd::WriteReq);
         pkt->dataDynamic(pkt_data);
+        // pkt_data[0] = data;
+    } else if (cmd == TRECmd::VST) {
+        DPRINTF(TRE, "Initiating %s write at addr 0x%x (blk 0x%x)\n",
+                uncacheable ? "uncacheable " : "", req->getPaddr(), blockAlign(req->getPaddr()));
+
+        pkt = new Packet(req, MemCmd::WriteReq);
+        pkt->dataDynamic(pkt_data_vector);
         // pkt_data[0] = data;
     } else {
         assert(false);
@@ -1156,3 +1184,4 @@ TRE::pop()
 }
 
 } // namespace gem5
+

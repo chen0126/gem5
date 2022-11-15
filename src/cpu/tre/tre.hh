@@ -178,15 +178,19 @@ class TRE : public ClockedObject
 
     const Addr INVALID_PADDR = -1;
 
-    typedef enum TRECmd { LD, ST, STALL } TRECmd;
+    typedef enum TRECmd { LD, VLD, ST, VST, STALL } TRECmd;
 
     std::string
     cmd2str(TRECmd cmd)
     {
         if (cmd == TRECmd::LD)
             return "LD";
+        else if (cmd == TRECmd::VLD)
+            return "VLD";
         else if (cmd == TRECmd::ST)
             return "ST";
+        else if (cmd == TRECmd::VST)
+            return "VST";
         else if (cmd == TRECmd::STALL)
             return "STALL";
         else
@@ -217,7 +221,9 @@ class TRE : public ClockedObject
         return (addr & ~blockAddrMask);
     }
 
-    Addr paddr; unsigned int data;
+    Addr paddr; 
+    Addr paddr_end;
+    unsigned int data;
 
     const unsigned progressInterval;  // frequency of progress reports
     const Cycles progressCheck;
