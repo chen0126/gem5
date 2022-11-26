@@ -59,6 +59,8 @@ static std::map<int, int> loop_counts;
 static std::map<int, bool> in_loop;
 long int offset=9;
 
+#define v_num 8
+
 std::map<Addr, TREMutex> TRE::mutexMap;
 std::map<Addr, TREBarrier> TRE::barrierMap;
 std::vector<TRE *> TRE::allTREs;
@@ -249,6 +251,7 @@ TRE::completeRequest(PacketPtr pkt, bool functional)
             pkt->isWrite() ? "write" : "read",
             req->getPaddr(), blockAlign(req->getPaddr()),
             pkt->isError() ? "error" : "success");
+    DPRINTF(TRE, "req->getSize() = %d\n",req->getSize());
 
     // this address is no longer outstanding
     bool found = addrInFlight(req->getPaddr(), true/*erase*/);
@@ -751,7 +754,7 @@ TRE::tick()
 
     PacketPtr pkt = nullptr;
     uint8_t *pkt_data = new uint8_t[1];
-    uint8_t *pkt_data_vector = new uint8_t[8];
+    uint8_t *pkt_data_vector = new uint8_t[v_num];
 
     if (cmd == TRECmd::LD) {
         DPRINTF(TRE, "Initiating read at addr 0x%x (blk 0x%x)\n", req->getPaddr(),
@@ -760,7 +763,7 @@ TRE::tick()
         pkt = new Packet(req, MemCmd::ReadReq);
         pkt->dataDynamic(pkt_data);
     } else if (cmd == TRECmd::VLD) {
-        DPRINTF(TRE, "Initiating read at addr 0x%x (blk 0x%x)\n", req->getPaddr(),
+        DPRINTF(TRE, "Initiating vector read at addr 0x%x (blk 0x%x)\n", req->getPaddr(),
                 blockAlign(req->getPaddr()));
 
         pkt = new Packet(req, MemCmd::ReadReq);
@@ -773,7 +776,7 @@ TRE::tick()
         pkt->dataDynamic(pkt_data);
         // pkt_data[0] = data;
     } else if (cmd == TRECmd::VST) {
-        DPRINTF(TRE, "Initiating %s write at addr 0x%x (blk 0x%x)\n",
+        DPRINTF(TRE, "Initiating %s vector write at addr 0x%x (blk 0x%x)\n",
                 uncacheable ? "uncacheable " : "", req->getPaddr(), blockAlign(req->getPaddr()));
 
         pkt = new Packet(req, MemCmd::WriteReq);
