@@ -51,7 +51,7 @@ from common import FileSystemConfig
 
 from topologies import *
 from network import Network
-
+dir_ranges_glb = []
 def define_options(parser):
     # By default, ruby uses the simple timing cpu
     parser.set_defaults(cpu_type="TimingSimpleCPU")
@@ -98,7 +98,6 @@ def define_options(parser):
     exec("from . import %s" % protocol)
     eval("%s.define_options(parser)" % protocol)
     Network.define_options(parser)
-
 def setup_memory_controllers(system, ruby, dir_cntrls, options):
     if (options.numa_high_bit):
         block_size_bits = options.numa_high_bit + 1 - \
@@ -120,7 +119,6 @@ def setup_memory_controllers(system, ruby, dir_cntrls, options):
         # if the numa_bit is not specified, set the directory bits as the
         # lowest bits above the block offset bits
         intlv_size = options.cacheline_size
-
     # Sets bits to be used for interleaving.  Creates memory controllers
     # attached to a directory controller.  A separate controller is created
     # for each address range as the abstract memory can handle only one
@@ -130,8 +128,8 @@ def setup_memory_controllers(system, ruby, dir_cntrls, options):
         if len(system.mem_ranges) > 1:
             crossbar = IOXBar()
             crossbars.append(crossbar)
-            dir_cntrl.memory = crossbar.cpu_side_ports
-
+            dir_cntrl.memory_out_port = crossbar.cpu_side_ports
+        #TODO
         dir_ranges = []
         for r in system.mem_ranges:
             mem_type = ObjectList.mem_list.get(options.mem_type)
@@ -148,22 +146,22 @@ def setup_memory_controllers(system, ruby, dir_cntrls, options):
 
             mem_ctrls.append(mem_ctrl)
             dir_ranges.append(dram_intf.range)
-
+            dir_ranges_glb.append(dram_intf.range)
             if crossbar != None:
                 mem_ctrl.port = crossbar.mem_side_ports
             else:
-                mem_ctrl.port = dir_cntrl.memory
-
+                mem_ctrl.port = dir_cntrl.memory_out_port
+                
             # Enable low-power DRAM states if option is set
             if issubclass(mem_type, DRAMInterface):
                 mem_ctrl.dram.enable_dram_powerdown = \
                         options.enable_dram_powerdown
 
-        index += 1
         dir_cntrl.addr_ranges = dir_ranges
-
+        index += 1
     system.mem_ctrls = mem_ctrls
-
+    #for i in dir_ranges:
+    #	print(i)
     if len(crossbars) > 0:
         ruby.crossbars = crossbars
 
@@ -197,15 +195,25 @@ def create_system(options, full_system, system, piobus = None, dma_ports = [],
 
     protocol = buildEnv['PROTOCOL']
     exec("from . import %s" % protocol)
-    try:
-        (cpu_sequencers, dir_cntrls, topology) = \
-             eval("%s.create_system(options, full_system, system, dma_ports,\
-                                    bootmem, ruby, cpus)"
-                  % protocol)
-    except:
-        print("Error: could not create sytem for ruby protocol %s" % protocol)
-        raise
-
+    #TODO
+    if (protocol == 'MOESI_hammer'):
+        try:
+            (cpu_sequencers, l1_cntrl_nodes, dir_cntrls, topology) = \
+            eval("%s.create_system(options, full_system, system, dma_ports,\
+                bootmem, ruby, cpus)"
+                % protocol)
+        except:
+            print("Error: could not create sytem for ruby protocol %s" % protocol)
+            raise
+    else:
+        try:
+            (cpu_sequencers, dir_cntrls, topology) = \
+            eval("%s.create_system(options, full_system, system, dma_ports,\
+                bootmem, ruby, cpus)"
+                % protocol)
+        except:
+            print("Error: could not create sytem for ruby protocol %s" % protocol)
+            raise
     # Create the network topology
     topology.makeTopology(options, network, IntLinkClass, ExtLinkClass,
             RouterClass)
@@ -242,7 +250,10 @@ def create_system(options, full_system, system, piobus = None, dma_ports = [],
     ruby.number_of_virtual_networks = ruby.network.number_of_virtual_networks
     ruby._cpu_ports = cpu_sequencers
     ruby.num_of_sequencers = len(cpu_sequencers)
-
+    #TODO
+    for i, cpu_seq in enumerate(cpu_sequencers):
+        cpu_seq.addr_ranges = dir_ranges_glb[i]
+        l1_cntrl_nodes[i].addr_ranges = dir_ranges_glb[i]
     # Create a backing copy of physical memory in case required
     if options.access_backing_store:
         ruby.access_backing_store = True
@@ -265,7 +276,7 @@ def create_directories(options, bootmem, ruby_system, system):
         rom_dir_cntrl.directory = RubyDirectoryMemory()
         rom_dir_cntrl.ruby_system = ruby_system
         rom_dir_cntrl.version = i + 1
-        rom_dir_cntrl.memory = bootmem.port
+        rom_dir_cntrl.memory_out_port = bootmem.port
         rom_dir_cntrl.addr_ranges = bootmem.range
         return (dir_cntrl_nodes, rom_dir_cntrl)
 

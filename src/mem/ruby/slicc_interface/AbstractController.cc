@@ -94,8 +94,10 @@ AbstractController::init()
     downstreamDestinations.resize();
     for (auto abs_cntrl : params().downstream_destinations) {
         MachineID mid = abs_cntrl->getMachineID();
+        DPRINTF(RubyQueue, "@@@@@@@@@@@@@@ mid = %d\n", mid);
         const AddrRangeList &ranges = abs_cntrl->getAddrRanges();
         for (const auto &addr_range : ranges) {
+            DPRINTF(RubyQueue, "@@@@@@@@@@@@@@ addr_range = %s\n", addr_range.to_string());
             auto i = downstreamAddrMap.intersects(addr_range);
             if (i == downstreamAddrMap.end()) {
                 i = downstreamAddrMap.insert(addr_range, AddrMapEntry());
@@ -446,6 +448,15 @@ AbstractController::MemoryPort::recvReqRetry()
     controller->m_waiting_mem_retry = false;
     controller->serviceMemoryQueue();
 }
+
+//TODO
+AddrRangeList
+AbstractController::getAddrRanges() const
+{
+    return addrRanges;
+}
+
+
 
 AbstractController::MemoryPort::MemoryPort(const std::string &_name,
                                            AbstractController *_controller,

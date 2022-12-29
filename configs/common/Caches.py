@@ -39,14 +39,22 @@
 
 from m5.defines import buildEnv
 from m5.objects import *
+import m5
+from m5.objects import Cache
 
+# Add the common scripts to our path
+#m5.util.addToPath('../../')
+
+from common import SimpleOpts
 # Base implementations of L1, L2, IO and TLB-walker caches. There are
 # used in the regressions and also as base components in the
 # system-configuration scripts. The values are meant to serve as a
 # starting point, and specific parameters can be overridden in the
 # specific instantiations.
-
+mem_ranges = [AddrRange(0, size=0xE0100000)]
 class L1Cache(Cache):
+    """Simple L1 Cache with default values"""
+
     assoc = 2
     tag_latency = 2
     data_latency = 2
@@ -54,22 +62,44 @@ class L1Cache(Cache):
     mshrs = 4
     tgts_per_mshr = 20
 
-class L1_ICache(L1Cache):
-    is_read_only = True
-    # Writeback clean lines as well
-    writeback_clean = True
+    def __init__(self, options=None):
+        super(L1Cache, self).__init__()
+        pass
 
-class L1_DCache(L1Cache):
-    pass
+    def connectBus(self, bus):
+        """Connect this cache to a memory-side bus"""
+        self.mem_side = bus.cpu_side_ports
+
+    def connectCPU(self, cpu):
+        """Connect this cache's port to a CPU-side port
+           This must be defined in a subclass"""
+        raise NotImplementedError
+
+class L1ICache(L1Cache):
+    """Simple L1 instruction cache with default values"""
+
+    # Set the default size
+    size = '16kB'
+
+class L1DCache(L1Cache):
+    """Simple L1 data cache with default values"""
+
+    # Set the default size
+    size = '64kB'
+    addr_ranges=mem_ranges
 
 class L2Cache(Cache):
+    """Simple L2 Cache with default values"""
+
+    # Default parameters
+    size = '256kB'
     assoc = 8
     tag_latency = 20
     data_latency = 20
     response_latency = 20
     mshrs = 20
     tgts_per_mshr = 12
-    write_buffers = 8
+    addr_ranges=mem_ranges
 
 class IOCache(Cache):
     assoc = 8

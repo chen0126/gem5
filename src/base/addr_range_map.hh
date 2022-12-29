@@ -65,6 +65,11 @@ class AddrRangeMap
     typedef std::map<AddrRange, V> RangeMap;
 
   public:
+    void print(){
+	for (auto range=tree.begin(); range!=tree.end(); range++){
+	    std::cout << "range address =" << range->first.to_string() << std::endl;
+	}
+    }
     /**
      * @ingroup api_addr_range
      * @{

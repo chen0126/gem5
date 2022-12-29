@@ -79,7 +79,6 @@ class RubyPort(ClockedObject):
     support_data_reqs = Param.Bool(True, "data cache requests supported")
     support_inst_reqs = Param.Bool(True, "inst cache requests supported")
     is_cpu_sequencer = Param.Bool(True, "connected to a cpu")
-
 class RubyPortProxy(RubyPort):
     type = 'RubyPortProxy'
     cxx_header = "mem/ruby/system/RubyPortProxy.hh"
@@ -101,6 +100,9 @@ class RubySequencer(RubyPort):
     # id used by protocols that support multiple sequencers per controller
     # 99 is the dummy default value
     coreid = Param.Int(99, "CorePair core id")
+    # TODO
+    addr_ranges = VectorParam.AddrRange([AllMemory],
+                                   "Address ranges to pass through the Sequencer")
 
     def connectCpuPorts(self, cpu):
         """

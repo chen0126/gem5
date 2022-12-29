@@ -64,6 +64,7 @@ class AbstractController;
 class RubyPort : public ClockedObject
 {
   public:
+
     class MemRequestPort : public QueuedRequestPort
     {
       private:
@@ -72,10 +73,9 @@ class RubyPort : public ClockedObject
 
       public:
         MemRequestPort(const std::string &_name, RubyPort *_port);
-
       protected:
         bool recvTimingResp(PacketPtr pkt);
-        void recvRangeChange() {}
+        void recvRangeChange();
     };
 
     class MemResponsePort : public QueuedResponsePort
@@ -84,14 +84,14 @@ class RubyPort : public ClockedObject
         RespPacketQueue queue;
         bool access_backing_store;
         bool no_retry_on_stall;
-
+        //AddrRangeList rubyranges;
       public:
         MemResponsePort(const std::string &_name, RubyPort *_port,
                      bool _access_backing_store,
                      PortID id, bool _no_retry_on_stall);
         void hitCallback(PacketPtr pkt);
         void evictionCallback(Addr address);
-
+        AddrRangeList ranges;
       protected:
         bool recvTimingReq(PacketPtr pkt);
 
@@ -99,8 +99,7 @@ class RubyPort : public ClockedObject
 
         void recvFunctional(PacketPtr pkt);
 
-        AddrRangeList getAddrRanges() const
-        { AddrRangeList ranges; return ranges; }
+        AddrRangeList getAddrRanges() const;
 
         void addToRetryList();
 
@@ -181,7 +180,6 @@ class RubyPort : public ClockedObject
     void ruby_hit_callback(PacketPtr pkt);
     void testDrainComplete();
     void ruby_eviction_callback(Addr address);
-
     /**
      * Called by the PIO port when receiving a timing response.
      *
@@ -202,6 +200,7 @@ class RubyPort : public ClockedObject
     std::vector<MemResponsePort *> response_ports;
 
   private:
+
     bool onRetryList(MemResponsePort * port)
     {
         return (std::find(retryList.begin(), retryList.end(), port) !=

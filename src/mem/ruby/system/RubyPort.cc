@@ -93,8 +93,8 @@ RubyPort::init()
 {
     assert(m_controller != NULL);
     m_mandatory_q_ptr = m_controller->getMandatoryQueue();
-    for (const auto &response_port : response_ports)
-        response_port->sendRangeChange();
+    for (const auto &response_port : response_ports){
+        response_port->sendRangeChange();}
     if (gotAddrRanges == 0 && FullSystem) {
         pioResponsePort.sendRangeChange();
     }
@@ -209,7 +209,6 @@ bool
 RubyPort::PioResponsePort::recvTimingReq(PacketPtr pkt)
 {
     RubyPort *ruby_port = static_cast<RubyPort *>(&owner);
-
     for (size_t i = 0; i < ruby_port->request_ports.size(); ++i) {
         AddrRangeList l = ruby_port->request_ports[i]->getAddrRanges();
         for (auto it = l.begin(); it != l.end(); ++it) {
@@ -626,6 +625,20 @@ RubyPort::PioResponsePort::getAddrRanges() const
     return ranges;
 }
 
+//TODO
+AddrRangeList 
+RubyPort::MemResponsePort::getAddrRanges() const
+{ 
+    AddrRangeList rubyranges;
+    RubyPort *ruby_port = static_cast<RubyPort *>(&owner);
+    AddrRangeList ranges = ruby_port->m_controller->getAddrRanges();
+    for ([[maybe_unused]] const auto &r : ranges)
+        DPRINTF(RubyPort, " %s \n", r.to_string());
+    return ranges; 
+}
+
+
+
 bool
 RubyPort::MemResponsePort::isShadowRomAddress(Addr addr) const
 {
@@ -683,6 +696,19 @@ RubyPort::PioRequestPort::recvRangeChange()
         r.pioResponsePort.sendRangeChange();
     }
 }
+
+//TODO
+void
+RubyPort::MemRequestPort::recvRangeChange()
+{
+    DPRINTF(RubyPort, "recvRangeChange~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    RubyPort &r = static_cast<RubyPort &>(owner);
+    r.gotAddrRanges--;
+    if (r.gotAddrRanges == 0 && FullSystem) {
+        r.memResponsePort.sendRangeChange();
+    }
+}
+
 
 int
 RubyPort::functionalWrite(Packet *func_pkt)

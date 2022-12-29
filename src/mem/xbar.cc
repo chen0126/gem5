@@ -333,8 +333,11 @@ BaseXBar::findPort(AddrRange addr_range)
     // we should never see any address lookups before we've got the
     // ranges of all connected CPU-side-port modules
     assert(gotAllAddrRanges);
-
     // Check the address map interval tree
+    //TODO
+    //portMap.print();
+    DPRINTF(AddrRanges, "range %s with size %d\n",
+            addr_range.to_string(), addr_range.size());
     auto i = portMap.contains(addr_range);
     if (i != portMap.end()) {
         return i->second;
@@ -365,11 +368,11 @@ BaseXBar::recvRangeChange(PortID mem_side_port_id)
 {
     DPRINTF(AddrRanges, "Received range change from cpu_side_ports %s\n",
             memSidePorts[mem_side_port_id]->getPeer());
-
+    DPRINTF(AddrRanges, "is connected = %d\n",
+            memSidePorts[mem_side_port_id]->isConnected ());
     // remember that we got a range from this memory-side port and thus the
     // connected CPU-side-port module
     gotAddrRanges[mem_side_port_id] = true;
-
     // update the global flag
     if (!gotAllAddrRanges) {
         // take a logical AND of all the ports and see if we got
@@ -380,7 +383,7 @@ BaseXBar::recvRangeChange(PortID mem_side_port_id)
             gotAllAddrRanges &= *r++;
         }
         if (gotAllAddrRanges)
-            DPRINTF(AddrRanges, "Got address ranges from all responders\n");
+            DPRINTF(AddrRanges, "Got address ranges from all responders from port id %d\n", mem_side_port_id);
     }
 
     // note that we could get the range from the default port at any
@@ -406,18 +409,20 @@ BaseXBar::recvRangeChange(PortID mem_side_port_id)
         // dynamically, so remove any existing entries
         if (gotAddrRanges[mem_side_port_id]) {
             for (auto p = portMap.begin(); p != portMap.end(); ) {
-                if (p->second == mem_side_port_id)
+                if (p->second == mem_side_port_id){
                     // erasing invalidates the iterator, so advance it
                     // before the deletion takes place
                     portMap.erase(p++);
-                else
+		}   
+                else{
                     p++;
+                }
             }
         }
+        DPRINTF(AddrRanges, " memSidePorts[mem_side_port_id].name() = %s\n", memSidePorts[mem_side_port_id]->name());
 
         AddrRangeList ranges = memSidePorts[mem_side_port_id]->
                                getAddrRanges();
-
         for (const auto& r: ranges) {
             DPRINTF(AddrRanges, "Adding range %s for id %d\n",
                     r.to_string(), mem_side_port_id);
@@ -437,7 +442,7 @@ BaseXBar::recvRangeChange(PortID mem_side_port_id)
     // modules, go ahead and tell our connected memory-side-port modules in
     // turn, this effectively assumes a tree structure of the system
     if (gotAllAddrRanges) {
-        DPRINTF(AddrRanges, "Aggregating address ranges\n");
+        DPRINTF(AddrRanges, "Aggregating address ranges from port id %d\n", mem_side_port_id);
         xbarRanges.clear();
 
         // start out with the default range
@@ -469,8 +474,8 @@ BaseXBar::recvRangeChange(PortID mem_side_port_id)
                     if (!(useDefaultRange &&
                           merged_range.isSubset(defaultRange))) {
                         xbarRanges.push_back(merged_range);
-                        DPRINTF(AddrRanges, "-- Adding merged range %s\n",
-                                merged_range.to_string());
+                        DPRINTF(AddrRanges, "-- Adding merged range %s from port id %d\n",
+                                merged_range.to_string(), mem_side_port_id);
                     }
                     intlv_ranges.clear();
                 }
@@ -480,8 +485,8 @@ BaseXBar::recvRangeChange(PortID mem_side_port_id)
                 if (!(useDefaultRange &&
                       r.first.isSubset(defaultRange))) {
                     xbarRanges.push_back(r.first);
-                    DPRINTF(AddrRanges, "-- Adding range %s\n",
-                            r.first.to_string());
+                    DPRINTF(AddrRanges, "-- Adding range %s from port id %d\n",
+                            r.first.to_string(), mem_side_port_id);
                 }
             }
         }
@@ -517,8 +522,9 @@ BaseXBar::recvRangeChange(PortID mem_side_port_id)
 
         // tell all our neighbouring memory-side ports that our address
         // ranges have changed
-        for (const auto& port: cpuSidePorts)
+        for (const auto& port: cpuSidePorts){
             port->sendRangeChange();
+        }
     }
 }
 
@@ -534,9 +540,6 @@ BaseXBar::getAddrRanges() const
     // the range queries and no devices on the memory side of a crossbar
     // (CPU, cache, bridge etc) actually care about the ranges of the
     // ports they are connected to
-
-    DPRINTF(AddrRanges, "Received address range request\n");
-
     return xbarRanges;
 }
 

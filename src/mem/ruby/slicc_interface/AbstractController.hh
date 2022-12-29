@@ -168,8 +168,8 @@ class AbstractController : public ClockedObject, public Consumer
     void recvTimingResp(PacketPtr pkt);
     Tick recvAtomic(PacketPtr pkt);
 
-    const AddrRangeList &getAddrRanges() const { return addrRanges; }
-
+    //const AddrRangeList &getAddrRanges() const { return addrRanges; }
+    AddrRangeList getAddrRanges() const;
   public:
     MachineID getMachineID() const { return m_machineID; }
     RequestorID getRequestorId() const { return m_id; }

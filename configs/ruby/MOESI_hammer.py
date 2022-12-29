@@ -33,6 +33,13 @@ from .Ruby import create_topology, create_directories
 from .Ruby import send_evicts
 from common import FileSystemConfig
 
+#TODO
+mem_ranges = [AddrRange(0, size=0xE0100000)]
+#cache_ranges = [AddrRange(0, size=0xE0100000)]
+#print(cache_ranges.config_value())
+#100040 200080
+#0:3759144960:0:1048640:2097280
+
 #
 # Declare caches used by the protocol
 #
@@ -72,24 +79,27 @@ def create_system(options, full_system, system, dma_ports, bootmem,
     # controller constructors are called before the network constructor
     #
     block_size_bits = int(math.log(options.cacheline_size, 2))
-
     for i in range(options.num_cpus):
+    #for i, dir_cntrl enumerate(dir_cntrl_nodes):
         #
         # First create the Ruby objects associated with this cpu
         #
         l1i_cache = L1Cache(size = options.l1i_size,
                             assoc = options.l1i_assoc,
                             start_index_bit = block_size_bits,
+                            addr_ranges=mem_ranges,
                             is_icache = True)
         l1d_cache = L1Cache(size = options.l1d_size,
                             assoc = options.l1d_assoc,
+			    addr_ranges=mem_ranges,
                             start_index_bit = block_size_bits)
         l2_cache = L2Cache(size = options.l2_size,
                            assoc = options.l2_assoc,
+ 			   addr_ranges=mem_ranges,
                            start_index_bit = block_size_bits)
 
         clk_domain = cpus[i].clk_domain
-
+        # TODO
         l1_cntrl = L1Cache_Controller(version=i, L1Icache=l1i_cache,
                                       L1Dcache=l1d_cache, L2cache=l2_cache,
                                       no_mig_atomic=not \
@@ -97,11 +107,13 @@ def create_system(options, full_system, system, dma_ports, bootmem,
                                       send_evictions=send_evicts(options),
                                       transitions_per_cycle=options.ports,
                                       clk_domain=clk_domain,
-                                      ruby_system=ruby_system)
+                                      ruby_system=ruby_system,
+                                      addr_ranges=mem_ranges)
 
         cpu_seq = RubySequencer(version=i,
                                 dcache=l1d_cache,clk_domain=clk_domain,
                                 ruby_system=ruby_system)
+				#addr_ranges=mem_ranges
 
         l1_cntrl.sequencer = cpu_seq
         if options.recycle_latency:
@@ -130,8 +142,6 @@ def create_system(options, full_system, system, dma_ports, bootmem,
         l1_cntrl.forwardToCache.in_port = ruby_system.network.out_port
         l1_cntrl.responseToCache = MessageBuffer()
         l1_cntrl.responseToCache.in_port = ruby_system.network.out_port
-
-
     #
     # determine size and index bits for probe filter
     # By default, the probe filter size is configured to be twice the
@@ -198,7 +208,13 @@ def create_system(options, full_system, system, dma_ports, bootmem,
         dir_cntrl.dmaRequestToDir.in_port = ruby_system.network.out_port
         dir_cntrl.requestToMemory = MessageBuffer()
         dir_cntrl.responseFromMemory = MessageBuffer()
-
+    #TODO
+    #for i, dir_cntrl in enumerate(dir_cntrl_nodes):
+        #d_range = []
+        #l1_cntrl_nodes[i].addr_ranges=dir_cntrl.addr_ranges.getValue()
+        #l1_cntrl_nodes[i].addr_ranges = dir_cntrl.addr_ranges.getValue()
+        #d_range = dir_cntrl.addr_ranges.config_value()
+        #print(d_range)
 
     for i, dma_port in enumerate(dma_ports):
         #
@@ -275,4 +291,4 @@ def create_system(options, full_system, system, dma_ports, bootmem,
 
     ruby_system.network.number_of_virtual_networks = 6
     topology = create_topology(all_cntrls, options)
-    return (cpu_sequencers, mem_dir_cntrl_nodes, topology)
+    return (cpu_sequencers, l1_cntrl_nodes, mem_dir_cntrl_nodes, topology)

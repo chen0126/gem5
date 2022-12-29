@@ -67,6 +67,8 @@ namespace ruby
 
 Sequencer::Sequencer(const Params &p)
     : RubyPort(p), m_IncompleteTimes(MachineType_NUM),
+      //TODO
+      addrRanges(p.addr_ranges.begin(), p.addr_ranges.end()),
       deadlockCheckEvent([this]{ wakeup(); }, "Sequencer deadlock check")
 {
     m_outstanding_count = 0;
@@ -830,6 +832,12 @@ operator<<(std::ostream &out, const std::unordered_map<KEY, VALUE> &map)
     return out;
 }
 
+//TODO
+AddrRangeList
+Sequencer::getAddrRanges() const
+{
+    return addrRanges;
+}
 void
 Sequencer::print(std::ostream& out) const
 {

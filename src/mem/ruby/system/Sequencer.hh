@@ -221,8 +221,12 @@ class Sequencer : public RubyPort
     virtual RequestStatus insertRequest(PacketPtr pkt,
                                         RubyRequestType primary_type,
                                         RubyRequestType secondary_type);
-
+    //TODO
+    AddrRangeList getAddrRanges() const;
   private:
+    //TODO
+    const AddrRangeList addrRanges;
+
     int m_max_outstanding_requests;
 
     CacheMemory* m_dataCache_ptr;
