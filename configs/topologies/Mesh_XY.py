@@ -96,6 +96,7 @@ class Mesh_XY(SimpleTopology):
         # Connect the remainding nodes to router 0.  These should only be
         # DMA nodes.
         for (i, node) in enumerate(remainder_nodes):
+            print("node.type",node.type)
             assert(node.type == 'DMA_Controller')
             assert(i < remainder)
             ext_links.append(ExtLink(link_id=link_count, ext_node=node,

@@ -83,11 +83,6 @@ class AddrRange
 
   private:
 
-    /// Private fields for the start and end of the range
-    /// _start is the beginning of the range (inclusive).
-    /// _end is not part of the range.
-    Addr _start;
-    Addr _end;
 
     /**
      * Each mask determines the bits we need to xor to get one bit of
@@ -142,6 +137,11 @@ class AddrRange
     }
 
   public:
+    /// Private fields for the start and end of the range
+    /// _start is the beginning of the range (inclusive).
+    /// _end is not part of the range.
+    Addr _start;
+    Addr _end;
 
     /**
      * @ingroup api_addr_range

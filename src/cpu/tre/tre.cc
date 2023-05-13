@@ -73,6 +73,20 @@ TRE::initQueues(unsigned long depth)
     // begin generated code for init_queues
     queues.insert(std::make_pair(std::make_pair(0, 1), new TREQueue(depth)));
     queues.insert(std::make_pair(std::make_pair(0, 2), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 3), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 4), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 5), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 6), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 7), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 8), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 9), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 10), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 11), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 12), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 13), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 14), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 15), new TREQueue(depth)));
+    queues.insert(std::make_pair(std::make_pair(0, 16), new TREQueue(depth)));
     // end generated code for init_queues
 }
 
@@ -734,7 +748,6 @@ TRE::tick()
         schedule(tickEvent, clockEdge(Cycles(interval * data)));
         return;
     }
-
     // mark access as uncacheable
     if (uncacheable) {
         flags.set(Request::UNCACHEABLE);
@@ -765,7 +778,8 @@ TRE::tick()
     } else if (cmd == TRECmd::VLD) {
         DPRINTF(TRE, "Initiating vector read at addr 0x%x (blk 0x%x)\n", req->getPaddr(),
                 blockAlign(req->getPaddr()));
-
+	DPRINTF(TRE, "/////////////////////req size = %d\n", req->getSize());
+        //std::cout << "pkt->getSize()" << pkt->getSize() << std::endl;
         pkt = new Packet(req, MemCmd::ReadReq);
         pkt->dataDynamic(pkt_data_vector);
     } else if (cmd == TRECmd::ST) {
@@ -778,9 +792,10 @@ TRE::tick()
     } else if (cmd == TRECmd::VST) {
         DPRINTF(TRE, "Initiating %s vector write at addr 0x%x (blk 0x%x)\n",
                 uncacheable ? "uncacheable " : "", req->getPaddr(), blockAlign(req->getPaddr()));
-
+        //std::cout << "pkt->getSize()" << pkt->getSize() << std::endl;
         pkt = new Packet(req, MemCmd::WriteReq);
-        pkt->dataDynamic(pkt_data_vector);
+        //pkt->dataDynamic(pkt_data_vector);
+	pkt->dataDynamic(pkt_data);
         // pkt_data[0] = data;
     } else {
         assert(false);

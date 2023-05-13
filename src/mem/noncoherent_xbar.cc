@@ -49,6 +49,7 @@
 #include "base/trace.hh"
 #include "debug/NoncoherentXBar.hh"
 #include "debug/XBar.hh"
+#include <string> 
 
 namespace gem5
 {
@@ -110,6 +111,7 @@ NoncoherentXBar::recvTimingReq(PacketPtr pkt, PortID cpu_side_port_id)
     // determine the destination based on the address
     PortID mem_side_port_id = findPort(pkt->getAddrRange());
 
+    //DPRINTF(NoncoherentXBar, "mem_side_port_id = %d \n",mem_side_port_id);
     // test if the layer should be considered occupied for the current
     // port
     if (!reqLayers[mem_side_port_id]->tryTiming(src_port)) {
